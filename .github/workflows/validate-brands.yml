@@ -35,3 +35,22 @@ jobs:
         uses: hmarr/auto-approve-action@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Merge pull request
+        if: ${{ github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.mergeable_state == 'clean' }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { data: pullRequest } = await github.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: context.payload.pull_request.number
+            });
+
+            if (pullRequest.mergeable && pullRequest.mergeable_state === 'clean') {
+              await github.pulls.merge({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                pull_number: context.payload.pull_request.number
+              });
+            }
