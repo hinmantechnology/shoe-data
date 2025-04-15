@@ -37,37 +37,42 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Wait for mergeable state
-        id: wait-for-mergeable-state
         uses: actions/github-script@v6
         with:
           script: |
+            const github = require('@actions/github');
+            const core = require('@actions/core');
+
             let attempts = 0;
             const maxAttempts = 10;
             const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
 
             while (attempts < maxAttempts) {
-              const { data: pullRequest } = await github.pulls.get({
+              const { data: pullRequest } = await github.rest.pulls.get({
                 owner: context.repo.owner,
                 repo: context.repo.repo,
                 pull_number: context.payload.pull_request.number
               });
 
               if (pullRequest.mergeable && pullRequest.mergeable_state === 'clean') {
-                return { mergeable: true };
+                core.setOutput('mergeable', true);
+                return;
               }
 
               attempts++;
               await delay(5000); // Wait 5 seconds before retrying
             }
 
-            return { mergeable: false };
+            core.setOutput('mergeable', false);
 
       - name: Merge pull request
         if: steps.wait-for-mergeable-state.outputs.mergeable == 'true'
         uses: actions/github-script@v6
         with:
           script: |
-            await github.pulls.merge({
+            const github = require('@actions/github');
+
+            await github.rest.pulls.merge({
               owner: context.repo.owner,
               repo: context.repo.repo,
               pull_number: context.payload.pull_request.number
