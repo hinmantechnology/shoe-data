@@ -31,7 +31,7 @@ jobs:
           python .github/scripts/validate_brands.py
 
       - name: Auto-approve and merge
-        if: github.event.pull_request.user.login == 'codeowner-username'
+        if: contains(github.event.pull_request.user.login, '@hinmantechnology/onefitai-ui')
         uses: hmarr/auto-approve-action@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
