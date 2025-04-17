@@ -2,11 +2,17 @@ name: Validate brands.json
 
 on:
   push:
+    branches:
+      - main
     paths:
       - brands.json
+      - '.github/scripts/**'
+      - '.github/workflows/**'
   pull_request:
     paths:
       - brands.json
+      - '.github/scripts/**'
+      - '.github/workflows/**'
 
 jobs:
   validate-json:
@@ -14,7 +20,7 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.2.2
 
       - name: Set up Python
         uses: actions/setup-python@v4
@@ -32,52 +38,6 @@ jobs:
 
       - name: Auto-approve and merge
         if: contains(github.event.pull_request.user.login, 'HineshMandalia')
-        uses: hmarr/auto-approve-action@v3
+        uses: hmarr/auto-approve-action@v4.0.0
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-  auto-merge:
-    runs-on: ubuntu-latest
-    needs: validate-json
-    if: github.ref != 'refs/heads/main'
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v3
-
-      - name: Wait for mergeable state
-        uses: actions/github-script@v6
-        with:
-          script: |
-            let attempts = 0;
-            const maxAttempts = 10;
-            const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
-
-            while (attempts < maxAttempts) {
-              const { data: pullRequest } = await github.rest.pulls.get({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                pull_number: context.payload.pull_request.number
-              });
-
-              if (pullRequest.mergeable && pullRequest.mergeable_state === 'clean') {
-                core.setOutput('mergeable', true);
-                return;
-              }
-
-              attempts++;
-              await delay(1000); // Wait 1 seconds before retrying
-            }
-
-            core.setOutput('mergeable', false);
-
-      - name: Merge pull request
-        if: steps.wait-for-mergeable-state.outputs.mergeable == 'true'
-        uses: actions/github-script@v6
-        with:
-          script: |
-            await github.rest.pulls.merge({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: context.payload.pull_request.number
-            });
