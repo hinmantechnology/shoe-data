@@ -39,6 +39,7 @@ jobs:
   auto-merge:
     runs-on: ubuntu-latest
     needs: validate-json
+    if: github.ref != 'refs/heads/main'
 
     steps:
       - name: Checkout code
