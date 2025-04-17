@@ -6,9 +6,13 @@ on:
       - main
     paths:
       - brands.json
+      - '.github/scripts/**'
+      - '.github/workflows/**'
   pull_request:
     paths:
       - brands.json
+      - '.github/scripts/**'
+      - '.github/workflows/**'
 
 jobs:
   validate-json:
